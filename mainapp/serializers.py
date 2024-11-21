@@ -1,38 +1,39 @@
-from rest_framework.exceptions import ValidationError
-from django.db import connection
+from rest_framework.exceptions import ValidationError, NotFound
+
 from mainapp.models import MyUser
 from rest_framework import serializers, status
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from mainapp.models import Organization, Certificate
-from rest_framework.response import Response
+
 
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ['name', 'fullname','inn','kpp','ogrn','phone','user']
+        fields = ['name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
         read_only_fields = ['user']
 
 
 class CertificateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Certificate
-        fields = ['id', 'cn','o','email','snils','owner','ogrn','serial_number','certificate',
+        fields = ['id', 'cn', 'o', 'email', 'snils', 'owner', 'ogrn', 'serial_number', 'certificate',
                   'byte_certificate', 'not_valid_after', 'not_valid_before']
-        read_only_fields = ['serial_number','cn','o','email','snils','inn','ogrn',
-                            'owner','not_valid_after', 'not_valid_before']
+        read_only_fields = ['serial_number', 'cn', 'o', 'email', 'snils', 'inn', 'ogrn',
+                            'owner', 'not_valid_after', 'not_valid_before']
 
     def create(self, validated_data):
         cert = validated_data.pop('certificate')
         data = cert.read()
         decode_data = x509.load_der_x509_certificate(data, default_backend())
         subject = decode_data.subject
+        print(subject)
         all_attr = {}
         for attribute in subject:
             all_attr[attribute.rfc4514_attribute_name.lower()] = attribute.value
 
         if Certificate.objects.filter(serial_number=decode_data.serial_number).exists():
-            raise ValidationError('Certificate already exists',status.HTTP_409_CONFLICT)
+            raise ValidationError('Certificate already exists', status.HTTP_403_FORBIDDEN)
         else:
             ogrn = all_attr.get('1.2.643.100.1')
             snils = all_attr.get('1.2.643.100.3')
@@ -54,26 +55,22 @@ class CertificateSerializer(serializers.ModelSerializer):
             validated_data['not_valid_before'] = decode_data.not_valid_before_utc
             validated_data['serial_number'] = decode_data.serial_number
             validated_data['byte_certificate'] = data
+        if validated_data.get('ogrn'):
+            Organization.objects.get_or_create(name=all_attr.get('o'), defaults={'ogrn': ogrn})
+        else:
+            org = Organization.objects.filter(name=all_attr.get('o'))
+            if len(org):
+                user, created = MyUser.objects.get_or_create(
+                    snils=snils,
+                    defaults={'email': email, 'username': username}
+                )
+                validated_data['owner'] = user
+            else:
+                raise NotFound('Organization not found')
+        return super().create(validated_data)
 
-            user, created = MyUser.objects.get_or_create(
-                snils=snils,
-                defaults={'email': email, 'username': username}
-            )
 
-
-
-            validated_data['owner'] = user
-
-            return super().create(validated_data)
-
-
-
-        # organization = Organization.objects.filter(fullname__iexact="администрация города муравленко")
-        # if not organization:
-        #     print(connection.queries)
-        #     raise ValidationError('Organization not fount', status.HTTP_404_NOT_FOUND)
-        # else:
-        #     print(connection.queries)
-        #     raise ValidationError('УСПЕх', status.HTTP_404_NOT_FOUND)
-        # print(connection.queries)
-        # print(organization)
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyUser
+        fields = '__all__'

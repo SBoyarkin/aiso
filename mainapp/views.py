@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 
-from mainapp.models import Organization, Certificate
-from mainapp.serializers import OrganizationSerializer, CertificateSerializer
+from mainapp.models import Organization, Certificate, MyUser
+from mainapp.serializers import OrganizationSerializer, CertificateSerializer, UserSerializer
 
 
 # Create your views here.
@@ -14,3 +14,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 class CertificateViewSet(viewsets.ModelViewSet):
     queryset = Certificate.objects.all()
     serializer_class = CertificateSerializer
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = MyUser.objects.all()
+    serializer_class = UserSerializer
