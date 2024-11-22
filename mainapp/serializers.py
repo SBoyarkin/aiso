@@ -7,10 +7,11 @@ from cryptography.hazmat.backends import default_backend
 from mainapp.models import Organization, Certificate
 
 
+
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ['name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
+        fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
         read_only_fields = ['user']
 
 
@@ -58,13 +59,14 @@ class CertificateSerializer(serializers.ModelSerializer):
         if validated_data.get('ogrn'):
             Organization.objects.get_or_create(name=all_attr.get('o'), defaults={'ogrn': ogrn})
         else:
-            org = Organization.objects.filter(name=all_attr.get('o'))
-            if len(org):
+            org = Organization.objects.get(name=all_attr.get('o'))
+            if org:
                 user, created = MyUser.objects.get_or_create(
                     snils=snils,
                     defaults={'email': email, 'username': username}
                 )
                 validated_data['owner'] = user
+                user.organization.add(org)
             else:
                 raise NotFound('Organization not found')
         return super().create(validated_data)
@@ -73,4 +75,4 @@ class CertificateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyUser
-        fields = '__all__'
+        fields =  '__all__'
