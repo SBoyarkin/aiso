@@ -6,6 +6,7 @@ class HistoryAtributes(models.Model):
 
 class MyUser(AbstractUser):
     snils = models.CharField(max_length=20)
+    middle_name = models.CharField(max_length=30)
 
 class Organization(models.Model):
     name = models.CharField(max_length=100)

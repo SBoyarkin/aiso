@@ -6,6 +6,24 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from mainapp.models import Organization, Certificate
 
+def get_username(given_name, sur_name):
+    print(given_name, sur_name)
+    result = ''
+    name = given_name.split(' ')
+    login = f'{name[0][0]}{name[1][0]}{sur_name}'.lower()
+    print(login)
+    transliteration_dict = {
+        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+        'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
+        'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+        'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+        'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya', '-': '-'
+    }
+
+    for i in login:
+        tl = transliteration_dict.get(i)
+        result += tl if tl is not None else ''
+    return result
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -40,9 +58,9 @@ class CertificateSerializer(serializers.ModelSerializer):
             snils = all_attr.get('1.2.643.100.3')
             inn = all_attr.get('1.2.643.3.131.1.1')
             email = all_attr.get('1.2.840.113549.1.9.1')
-            username = email.split('@')[0]
             sur_name = all_attr.get('2.5.4.4')
             given_name = all_attr.get('2.5.4.42')
+            username = get_username(given_name, sur_name)
             o = all_attr.get('o')
             validated_data['sur_name'] = sur_name
             validated_data['given_name'] = given_name
@@ -56,14 +74,18 @@ class CertificateSerializer(serializers.ModelSerializer):
             validated_data['not_valid_before'] = decode_data.not_valid_before_utc
             validated_data['serial_number'] = decode_data.serial_number
             validated_data['byte_certificate'] = data
+            print(validated_data)
         if validated_data.get('ogrn'):
             Organization.objects.get_or_create(name=all_attr.get('o'), defaults={'ogrn': ogrn})
         else:
             org = Organization.objects.get(name=all_attr.get('o'))
+
             if org:
                 user, created = MyUser.objects.get_or_create(
                     snils=snils,
-                    defaults={'email': email, 'username': username}
+                    defaults={'email': email, 'username': username,
+                              'first_name': sur_name, 'last_name': given_name,
+                              'middle_name': 'qw'}
                 )
                 validated_data['owner'] = user
                 user.organization.add(org)
@@ -75,4 +97,4 @@ class CertificateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyUser
-        fields =  '__all__'
+        fields =  ['id', 'username', 'email', 'snils', 'first_name', 'last_name','certificates']
