@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import ValidationError, NotFound
 
 from mainapp.models import MyUser
@@ -6,12 +7,11 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from mainapp.models import Organization, Certificate
 
+
 def get_username(given_name, sur_name):
-    print(given_name, sur_name)
     result = ''
     name = given_name.split(' ')
     login = f'{name[0][0]}{name[1][0]}{sur_name}'.lower()
-    print(login)
     transliteration_dict = {
         'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
         'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
@@ -78,7 +78,10 @@ class CertificateSerializer(serializers.ModelSerializer):
         if validated_data.get('ogrn'):
             Organization.objects.get_or_create(name=all_attr.get('o'), defaults={'ogrn': ogrn})
         else:
-            org = Organization.objects.get(name=all_attr.get('o'))
+            try:
+                org = Organization.objects.get(name=all_attr.get('o'))
+            except ObjectDoesNotExist:
+                raise ValidationError('Organization does not exist', status.HTTP_404_NOT_FOUND)
 
             if org:
                 user, created = MyUser.objects.get_or_create(
@@ -97,4 +100,4 @@ class CertificateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyUser
-        fields =  ['id', 'username', 'email', 'snils', 'first_name', 'last_name','certificates']
+        fields = ['id', 'username', 'email', 'snils', 'first_name', 'last_name', 'certificates']
