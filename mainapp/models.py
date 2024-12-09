@@ -4,10 +4,6 @@ from django.db import models
 class HistoryAtributes(models.Model):
     pass
 
-class MyUser(AbstractUser):
-    snils = models.CharField(max_length=20)
-    middle_name = models.CharField(max_length=30)
-
 class Organization(models.Model):
     name = models.CharField(max_length=100)
     fullname = models.CharField(max_length=255)
@@ -15,7 +11,20 @@ class Organization(models.Model):
     kpp = models.CharField(max_length=9)
     ogrn = models.CharField(max_length=13)
     phone = models.CharField(max_length=10)
-    user = models.ManyToManyField(MyUser, related_name='organization', blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class MyUser(AbstractUser):
+    snils = models.CharField(max_length=20)
+    middle_name = models.CharField(max_length=30)
+    organization = models.ManyToManyField(Organization, related_name='user', blank=True)
+
+
+
+
+
 
 class Certificate(models.Model):
     serial_number = models.CharField(max_length=150, unique=True)
