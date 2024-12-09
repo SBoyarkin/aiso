@@ -26,12 +26,6 @@ def get_username(given_name, sur_name):
     return result
 
 
-class OrganizationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Organization
-        fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
-        read_only_fields = ['user']
-
 
 class CertificateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -98,6 +92,15 @@ class CertificateSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    certificates = CertificateSerializer(many=True, read_only=True)
     class Meta:
         model = MyUser
         fields = ['id', 'username', 'email', 'snils', 'first_name', 'last_name', 'certificates']
+
+class OrganizationSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True, many=True)
+    class Meta:
+        model = Organization
+        fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
+        read_only_fields = ['user']
+

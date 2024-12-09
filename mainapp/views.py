@@ -3,6 +3,7 @@ from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 from mainapp.models import Organization, Certificate, MyUser
+from mainapp.permissions import AdminPermission
 from mainapp.serializers import OrganizationSerializer, CertificateSerializer, UserSerializer
 from rest_framework.response import Response
 
@@ -11,15 +12,15 @@ from rest_framework.response import Response
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticatedOrReadOnly, AdminPermission]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def list(self, request, *args, **kwargs):
-        print(self.request.user.organization.all())
-
+        print(self.request.user.мanages.all())
         if self.request.user.is_staff:
             return super().list(self, request, *args, **kwargs)
         else:
-            queryset = self.queryset.all().intersection(self.request.user.organization.all())
+            queryset = self.queryset.all().intersection(self.request.user.мanages.all())
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)

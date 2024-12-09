@@ -17,12 +17,16 @@ class Organization(models.Model):
 
 
 class MyUser(AbstractUser):
+    is_admin = models.BooleanField(default=False)
     snils = models.CharField(max_length=20)
     middle_name = models.CharField(max_length=30)
     organization = models.ManyToManyField(Organization, related_name='user', blank=True)
+    мanages = models.ManyToManyField(Organization, related_name='administrator', blank=True, through='AdminRule')
 
 
-
+class AdminRule(models.Model):
+    user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
 
 
 
