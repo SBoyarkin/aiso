@@ -1,7 +1,9 @@
+from pprint import pprint
+
 from django.shortcuts import render
 from rest_framework import viewsets, generics
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-
+from rest_framework.exceptions import NotAuthenticated
 from mainapp.models import Organization, Certificate, MyUser
 from mainapp.permissions import AdminPermission
 from mainapp.serializers import OrganizationSerializer, CertificateSerializer, UserSerializer
@@ -12,11 +14,10 @@ from rest_framework.response import Response
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-    # permission_classes = [IsAuthenticatedOrReadOnly, AdminPermission]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [IsAuthenticated, AdminPermission]
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
-        print(self.request.user.мanages.all())
         if self.request.user.is_staff:
             return super().list(self, request, *args, **kwargs)
         else:
@@ -31,12 +32,10 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
 
 
+
 class CertificateViewSet(viewsets.ModelViewSet):
     queryset = Certificate.objects.all()
     serializer_class = CertificateSerializer
-
-    def list(self, request, *args, **kwargs):
-        return super().list(self, request, *args, **kwargs)
 
 
 class UserViewSet(viewsets.ModelViewSet):

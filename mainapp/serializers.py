@@ -1,5 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.fields import SerializerMethodField
 
 from mainapp.models import MyUser
 from rest_framework import serializers, status
@@ -31,12 +32,12 @@ class CertificateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Certificate
         fields = ['id', 'cn', 'o', 'email', 'snils', 'owner', 'ogrn', 'serial_number', 'certificate',
-                  'byte_certificate', 'not_valid_after', 'not_valid_before']
+                   'not_valid_after', 'not_valid_before']
         read_only_fields = ['serial_number', 'cn', 'o', 'email', 'snils', 'inn', 'ogrn',
                             'owner', 'not_valid_after', 'not_valid_before']
 
     def create(self, validated_data):
-        cert = validated_data.pop('certificate')
+        cert = validated_data.get('certificate')
         data = cert.read()
         decode_data = x509.load_der_x509_certificate(data, default_backend())
         subject = decode_data.subject
