@@ -41,7 +41,7 @@ class CertificateSerializer(serializers.ModelSerializer):
         data = cert.read()
         decode_data = x509.load_der_x509_certificate(data, default_backend())
         subject = decode_data.subject
-        print(subject)
+        # print(subject)
         all_attr = {}
         for attribute in subject:
             all_attr[attribute.rfc4514_attribute_name.lower()] = attribute.value
@@ -55,6 +55,9 @@ class CertificateSerializer(serializers.ModelSerializer):
             email = all_attr.get('1.2.840.113549.1.9.1')
             sur_name = all_attr.get('2.5.4.4')
             given_name = all_attr.get('2.5.4.42')
+            last_name = all_attr.get('2.5.4.42').split(' ')[0]
+            middle_name = all_attr.get('2.5.4.42').split(' ')[1:]
+            middle_name = ' '.join(middle_name)
             username = get_username(given_name, sur_name)
             o = all_attr.get('o')
             validated_data['sur_name'] = sur_name
@@ -69,7 +72,7 @@ class CertificateSerializer(serializers.ModelSerializer):
             validated_data['not_valid_before'] = decode_data.not_valid_before_utc
             validated_data['serial_number'] = decode_data.serial_number
             validated_data['byte_certificate'] = data
-            print(validated_data)
+            # print(validated_data)
         if validated_data.get('ogrn'):
             Organization.objects.get_or_create(name=all_attr.get('o'), defaults={'ogrn': ogrn})
         else:
@@ -82,8 +85,8 @@ class CertificateSerializer(serializers.ModelSerializer):
                 user, created = MyUser.objects.get_or_create(
                     snils=snils,
                     defaults={'email': email, 'username': username,
-                              'first_name': sur_name, 'last_name': given_name,
-                              'middle_name': 'qw'}
+                              'first_name': sur_name, 'last_name': last_name,
+                              'middle_name': middle_name}
                 )
                 validated_data['owner'] = user
                 user.organization.add(org)
