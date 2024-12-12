@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.fields import SerializerMethodField
-
+from rest_framework.reverse import reverse
 from mainapp.models import MyUser
 from rest_framework import serializers, status
 from cryptography import x509
@@ -27,14 +27,14 @@ def get_username(given_name, sur_name):
     return result
 
 
-
 class CertificateSerializer(serializers.ModelSerializer):
+    links = serializers.SerializerMethodField()
     class Meta:
         model = Certificate
         fields = ['id', 'cn', 'o', 'email', 'snils', 'owner', 'ogrn', 'serial_number', 'certificate',
-                   'not_valid_after', 'not_valid_before']
+                  'not_valid_after', 'not_valid_before', 'links']
         read_only_fields = ['serial_number', 'cn', 'o', 'email', 'snils', 'inn', 'ogrn',
-                            'owner', 'not_valid_after', 'not_valid_before']
+                            'owner', 'not_valid_after', 'not_valid_before', 'links']
 
     def create(self, validated_data):
         cert = validated_data.get('certificate')
@@ -94,17 +94,44 @@ class CertificateSerializer(serializers.ModelSerializer):
                 raise NotFound('Organization not found')
         return super().create(validated_data)
 
+    def get_links(self, obj):
+        request = self.context.get('request')
+        model = self.Meta.model.__name__.lower()
+        detail = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'GET'}
+        delete = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'DELETE'}
+        update = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'PUT'}
+        return {
+
+            'retrieve': detail,
+            'destroy': delete,
+            'update': update,
+        }
+
 
 class UserSerializer(serializers.ModelSerializer):
     certificates = CertificateSerializer(many=True, read_only=True)
+    links = serializers.SerializerMethodField()
     class Meta:
         model = MyUser
-        fields = ['id', 'username', 'email', 'snils', 'first_name', 'last_name', 'certificates']
+        fields = ['id', 'username', 'email', 'snils', 'first_name', 'last_name', 'middle_name', 'certificates', 'links']
+
+    def get_links(self, obj):
+        request = self.context.get('request')
+        model = self.Meta.model.__name__.lower()
+        detail = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'GET'}
+        delete = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'DELETE'}
+        update = {'url': reverse(f'{model}-detail', request=request, kwargs={'pk': obj.pk}), 'method': 'PUT'}
+        return {
+
+            'retrieve': detail,
+            'destroy': delete,
+            'update': update,
+        }
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True, many=True)
+    # user = UserSerializer(read_only=True, many=True)
+
     class Meta:
         model = Organization
         fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
         read_only_fields = ['user']
-

@@ -27,7 +27,7 @@ class MyUser(AbstractUser):
 class AdminRule(models.Model):
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-
+    main = models.BooleanField(default=False)
 
 
 class Certificate(models.Model):
