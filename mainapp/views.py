@@ -38,8 +38,6 @@ class CertificateViewSet(viewsets.ModelViewSet):
     serializer_class = CertificateSerializer
 
 
-
-
 class UserViewSet(viewsets.ModelViewSet):
     queryset = MyUser.objects.all()
     serializer_class = UserSerializer
@@ -50,5 +48,21 @@ class PreviewViewSet(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.queryset.all().count()
         return Response(queryset)
+
+
+class TestView(generics.ListAPIView):
+    queryset = MyUser.objects.all()
+    serializer_class = UserSerializer
+    def list(self, request, *args, **kwargs):
+        print(kwargs)
+        queryset = self.queryset.filter(organization=kwargs['id'])
+        print(queryset)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 

@@ -18,10 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 
-from mainapp.views import OrganizationViewSet, CertificateViewSet, UserViewSet, PreviewViewSet
+from mainapp.views import OrganizationViewSet, CertificateViewSet, UserViewSet, PreviewViewSet, TestView
 
 router = routers.DefaultRouter()
-router.register('organizations', OrganizationViewSet)
+router.register('service/available/organizations', OrganizationViewSet)
 router.register('certificates', CertificateViewSet)
 router.register('users', UserViewSet)
 
@@ -31,5 +31,5 @@ urlpatterns = [
     path('preview/', PreviewViewSet.as_view(), name='preview'),
     path(r'auth/', include('djoser.urls')),
     path(r'auth/', include('djoser.urls.authtoken')),
-
+    path('test/<int:id>/', TestView.as_view(), name='test'),
 ] + router.urls

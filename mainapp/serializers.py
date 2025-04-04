@@ -133,5 +133,5 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone', 'user']
+        fields = ['id', 'name', 'fullname', 'inn', 'kpp', 'ogrn', 'phone']
         read_only_fields = ['user']
